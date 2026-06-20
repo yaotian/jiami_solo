@@ -1,9 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
@@ -64,7 +66,18 @@ namespace WHCryptoManager.ViewModel
         public string Note { get => _note; set { _note = value; OnPropertyChanged(); } }
 
         private string _softwareName = "文华指标客户端";
-        public string SoftwareName { get => _softwareName; set { _softwareName = value; OnPropertyChanged(); } }
+        public string SoftwareName
+        {
+            get => _softwareName;
+            set
+            {
+                if (_softwareName == value) return;
+                string old = _softwareName;
+                _softwareName = value;
+                OnPropertyChanged();
+                SwitchProject(old, value);
+            }
+        }
 
         private string _softwareVersion = "1.0";
         public string SoftwareVersion { get => _softwareVersion; set { _softwareVersion = value; OnPropertyChanged(); } }
@@ -107,28 +120,45 @@ namespace WHCryptoManager.ViewModel
         public MainViewModel()
         {
             LoadConfig();
+            LoadIndicators();
             LoadCustomerHistory();
         }
 
         public void Log(string msg) => LogText += $"[{DateTime.Now:HH:mm:ss}] {msg}\n";
 
-        private static string CustomerHistoryPath()
+        private static string AppDir() => Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? "";
+        private static string SafeName(string name)
         {
-            string root = ProjectRoot();
-            string dir = Path.Combine(root, "data");
-            Directory.CreateDirectory(dir);
-            return Path.Combine(dir, "customers.json");
+            if (string.IsNullOrWhiteSpace(name)) return "default";
+            return string.Join("_", name.Split(Path.GetInvalidFileNameChars()));
         }
 
-        private void LoadCustomerHistory()
+        private static string ConfigPath(string softwareName) => Path.Combine(AppDir(), $"{SafeName(softwareName)}_config.json");
+        private static string IndicatorsPath(string softwareName) => Path.Combine(AppDir(), $"{SafeName(softwareName)}_indicators.json");
+        private static string CustomerHistoryPath(string softwareName) => Path.Combine(AppDir(), $"{SafeName(softwareName)}_customers.json");
+
+        private void SwitchProject(string oldName, string newName)
         {
-            string path = CustomerHistoryPath();
-            if (!File.Exists(path)) return;
+            if (!string.IsNullOrWhiteSpace(oldName))
+            {
+                SaveConfig(oldName);
+                SaveIndicators(oldName);
+                SaveCustomerHistory(oldName);
+            }
+            LoadConfig(newName);
+            LoadIndicators(newName);
+            LoadCustomerHistory(newName);
+        }
+
+        private void LoadCustomerHistory(string softwareName = null)
+        {
+            string path = CustomerHistoryPath(softwareName ?? SoftwareName);
+            if (!File.Exists(path)) { CustomerHistory.Clear(); return; }
             try
             {
                 string json = File.ReadAllText(path, Encoding.UTF8);
                 var serializer = new System.Web.Script.Serialization.JavaScriptSerializer();
-                var list = serializer.Deserialize<System.Collections.Generic.List<CustomerRecord>>(json);
+                var list = serializer.Deserialize<List<CustomerRecord>>(json);
                 CustomerHistory.Clear();
                 if (list != null)
                 {
@@ -142,13 +172,13 @@ namespace WHCryptoManager.ViewModel
             }
         }
 
-        private void SaveCustomerHistory()
+        private void SaveCustomerHistory(string softwareName = null)
         {
-            string path = CustomerHistoryPath();
+            string path = CustomerHistoryPath(softwareName ?? SoftwareName);
             try
             {
                 var serializer = new System.Web.Script.Serialization.JavaScriptSerializer();
-                string json = serializer.Serialize(new System.Collections.Generic.List<CustomerRecord>(CustomerHistory));
+                string json = serializer.Serialize(new List<CustomerRecord>(CustomerHistory));
                 File.WriteAllText(path, json, Encoding.UTF8);
             }
             catch (Exception ex)
@@ -157,17 +187,9 @@ namespace WHCryptoManager.ViewModel
             }
         }
 
-        private static string ConfigPath()
+        private void LoadConfig(string softwareName = null)
         {
-            string root = ProjectRoot();
-            string dir = Path.Combine(root, "data");
-            Directory.CreateDirectory(dir);
-            return Path.Combine(dir, "manager_config.json");
-        }
-
-        private void LoadConfig()
-        {
-            string path = ConfigPath();
+            string path = ConfigPath(softwareName ?? SoftwareName);
             if (!File.Exists(path)) return;
             try
             {
@@ -177,7 +199,6 @@ namespace WHCryptoManager.ViewModel
                 if (cfg != null)
                 {
                     Contact = cfg.Contact ?? "微信: your_contact";
-                    SoftwareName = cfg.SoftwareName ?? "文华指标客户端";
                     SoftwareVersion = cfg.SoftwareVersion ?? "1.0";
                     ExpireDays = cfg.ExpireDays;
                     MasterKeyHex = cfg.MasterKeyHex ?? "";
@@ -190,15 +211,14 @@ namespace WHCryptoManager.ViewModel
             }
         }
 
-        public void SaveConfig()
+        private void SaveConfig(string softwareName = null)
         {
-            string path = ConfigPath();
+            string path = ConfigPath(softwareName ?? SoftwareName);
             try
             {
                 var cfg = new ManagerConfig
                 {
                     Contact = Contact ?? "微信: your_contact",
-                    SoftwareName = SoftwareName ?? "文华指标客户端",
                     SoftwareVersion = SoftwareVersion ?? "1.0",
                     ExpireDays = ExpireDays,
                     MasterKeyHex = MasterKeyHex ?? "",
@@ -210,6 +230,42 @@ namespace WHCryptoManager.ViewModel
             catch (Exception ex)
             {
                 Log("保存配置失败: " + ex.Message);
+            }
+        }
+
+        private void LoadIndicators(string softwareName = null)
+        {
+            string path = IndicatorsPath(softwareName ?? SoftwareName);
+            if (!File.Exists(path)) { ExtraIndicators.Clear(); return; }
+            try
+            {
+                string json = File.ReadAllText(path, Encoding.UTF8);
+                var serializer = new System.Web.Script.Serialization.JavaScriptSerializer();
+                var list = serializer.Deserialize<List<IndicatorItem>>(json);
+                ExtraIndicators.Clear();
+                if (list != null)
+                {
+                    foreach (var item in list)
+                        ExtraIndicators.Add(item);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log("加载指标文件列表失败: " + ex.Message);
+            }
+        }
+
+        private void SaveIndicators(string softwareName = null)
+        {
+            string path = IndicatorsPath(softwareName ?? SoftwareName);
+            try
+            {
+                var serializer = new System.Web.Script.Serialization.JavaScriptSerializer();
+                File.WriteAllText(path, serializer.Serialize(new List<IndicatorItem>(ExtraIndicators)), Encoding.UTF8);
+            }
+            catch (Exception ex)
+            {
+                Log("保存指标文件列表失败: " + ex.Message);
             }
         }
 
@@ -266,6 +322,7 @@ namespace WHCryptoManager.ViewModel
                 });
                 Log($"已添加加密指标: {name}");
             }
+            SaveIndicators();
         }
 
         public void RemoveIndicator(IndicatorItem item)
@@ -274,7 +331,15 @@ namespace WHCryptoManager.ViewModel
             {
                 ExtraIndicators.Remove(item);
                 Log("已删除加密指标");
+                SaveIndicators();
             }
+        }
+
+        public void SaveAll()
+        {
+            SaveConfig();
+            SaveIndicators();
+            SaveCustomerHistory();
         }
 
         static string ProjectRoot()
@@ -326,8 +391,11 @@ namespace WHCryptoManager.ViewModel
                 if (string.IsNullOrEmpty(safeSoftware)) safeSoftware = "WH8Crypto";
                 string appName = $"{SoftwareName} v{SoftwareVersion}";
                 if (string.IsNullOrEmpty(OutputPath))
-                    OutputPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
-                        $"wh8_{safeSoftware}_{safeUser}_v{SoftwareVersion}.exe");
+                {
+                    string clientDir = Path.Combine(AppDir(), "客户端");
+                    Directory.CreateDirectory(clientDir);
+                    OutputPath = Path.Combine(clientDir, $"wh8_{safeSoftware}_{safeUser}_v{SoftwareVersion}.exe");
+                }
 
                 string script = Path.Combine(root, "tools", "build_client.py");
                 if (!File.Exists(script))
@@ -382,6 +450,7 @@ namespace WHCryptoManager.ViewModel
                 CustomerHistory.Insert(0, record);
                 SaveCustomerHistory();
                 SaveConfig();
+                SaveIndicators();
 
                 MessageBox.Show($"客户端已生成:\n{OutputPath}", "成功");
             }

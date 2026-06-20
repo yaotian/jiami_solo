@@ -28,6 +28,6 @@ namespace WHCryptoManager
             finally { genBtn.IsEnabled = true; }
         }
 
-        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e) => Vm.SaveConfig();
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e) => Vm.SaveAll();
     }
 }

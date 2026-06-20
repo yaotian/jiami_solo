@@ -1172,10 +1172,16 @@ int launcher::run() {
     std::vector<std::wstring> names;
     for (const auto& item : items) names.push_back(item.first);
     if (!register_in_order_ini(order_ini, names)) {
-        show_msg_utf8("写入失败",
-            "无法更新软件目录\\Order.ini。\n"
-            "请关闭麦语言窗口后重试。", MB_ICONERROR);
-        return 2;
+        show_msg_utf8("请关闭麦语言窗口",
+            "检测到文华8正在占用指标列表文件（Order.ini）。\n"
+            "请关闭所有麦语言窗口后点击确定，本程序将继续完成加载。",
+            MB_ICONWARNING);
+        if (!register_in_order_ini(order_ini, names)) {
+            show_msg_utf8("写入失败",
+                "无法更新软件目录\\Order.ini。\n"
+                "请关闭麦语言窗口后重试。", MB_ICONERROR);
+            return 2;
+        }
     }
 
     std::string ver = hdr.indicator_version.empty() ? WH_INDICATOR_VERSION : hdr.indicator_version;

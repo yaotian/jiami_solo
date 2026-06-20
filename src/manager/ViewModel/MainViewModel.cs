@@ -42,6 +42,16 @@ namespace WHCryptoManager.ViewModel
             new System.Collections.Generic.List<string>();
     }
 
+    public class ManagerConfig
+    {
+        public string Contact { get; set; } = "微信: your_contact";
+        public string SoftwareName { get; set; } = "文华指标客户端";
+        public string SoftwareVersion { get; set; } = "1.0";
+        public int ExpireDays { get; set; } = 30;
+        public string MasterKeyHex { get; set; } = "";
+        public string OutputPath { get; set; } = "";
+    }
+
     public class MainViewModel : INotifyPropertyChanged
     {
         private string _userName = "";
@@ -96,6 +106,7 @@ namespace WHCryptoManager.ViewModel
 
         public MainViewModel()
         {
+            LoadConfig();
             LoadCustomerHistory();
         }
 
@@ -143,6 +154,62 @@ namespace WHCryptoManager.ViewModel
             catch (Exception ex)
             {
                 Log("保存客户记录失败: " + ex.Message);
+            }
+        }
+
+        private static string ConfigPath()
+        {
+            string root = ProjectRoot();
+            string dir = Path.Combine(root, "data");
+            Directory.CreateDirectory(dir);
+            return Path.Combine(dir, "manager_config.json");
+        }
+
+        private void LoadConfig()
+        {
+            string path = ConfigPath();
+            if (!File.Exists(path)) return;
+            try
+            {
+                string json = File.ReadAllText(path, Encoding.UTF8);
+                var serializer = new System.Web.Script.Serialization.JavaScriptSerializer();
+                var cfg = serializer.Deserialize<ManagerConfig>(json);
+                if (cfg != null)
+                {
+                    Contact = cfg.Contact ?? "微信: your_contact";
+                    SoftwareName = cfg.SoftwareName ?? "文华指标客户端";
+                    SoftwareVersion = cfg.SoftwareVersion ?? "1.0";
+                    ExpireDays = cfg.ExpireDays;
+                    MasterKeyHex = cfg.MasterKeyHex ?? "";
+                    OutputPath = cfg.OutputPath ?? "";
+                }
+            }
+            catch (Exception ex)
+            {
+                Log("加载配置失败: " + ex.Message);
+            }
+        }
+
+        public void SaveConfig()
+        {
+            string path = ConfigPath();
+            try
+            {
+                var cfg = new ManagerConfig
+                {
+                    Contact = Contact ?? "微信: your_contact",
+                    SoftwareName = SoftwareName ?? "文华指标客户端",
+                    SoftwareVersion = SoftwareVersion ?? "1.0",
+                    ExpireDays = ExpireDays,
+                    MasterKeyHex = MasterKeyHex ?? "",
+                    OutputPath = OutputPath ?? ""
+                };
+                var serializer = new System.Web.Script.Serialization.JavaScriptSerializer();
+                File.WriteAllText(path, serializer.Serialize(cfg), Encoding.UTF8);
+            }
+            catch (Exception ex)
+            {
+                Log("保存配置失败: " + ex.Message);
             }
         }
 
@@ -311,6 +378,7 @@ namespace WHCryptoManager.ViewModel
                 };
                 CustomerHistory.Insert(0, record);
                 SaveCustomerHistory();
+                SaveConfig();
 
                 MessageBox.Show($"客户端已生成:\n{OutputPath}", "成功");
             }

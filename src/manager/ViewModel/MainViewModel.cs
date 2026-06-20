@@ -32,16 +32,10 @@ namespace WHCryptoManager.ViewModel
     {
         public string Time { get; set; } = "";
         public string UserName { get; set; } = "";
-        public string Contact { get; set; } = "";
-        public string SoftwareName { get; set; } = "";
-        public string SoftwareVersion { get; set; } = "";
-        public int ExpireDays { get; set; } = 0;
-        public string ExpirePreview { get; set; } = "";
         public string MachineCode { get; set; } = "";
         public string LicenseKey { get; set; } = "";
-        public string OutputPath { get; set; } = "";
-        public System.Collections.Generic.List<string> IndicatorFiles { get; set; } =
-            new System.Collections.Generic.List<string>();
+        public string ExpireDate { get; set; } = "";
+        public string RemainingDays { get; set; } = "";
     }
 
     public class ManagerConfig
@@ -497,19 +491,16 @@ namespace WHCryptoManager.ViewModel
                         throw new Exception("build_client.py 失败，请确认已安装 MSVC + Windows SDK + Python cryptography");
                 }
 
+                string expireDate = ExpireDays <= 0 ? "永久" : DateTime.UtcNow.AddDays(ExpireDays).ToString("yyyy-MM-dd") + " UTC";
+                string remainingDays = ExpireDays <= 0 ? "永久" : ExpireDays.ToString();
                 var record = new CustomerRecord
                 {
                     Time = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
                     UserName = UserName.Trim(),
-                    Contact = Contact.Trim(),
-                    SoftwareName = SoftwareName.Trim(),
-                    SoftwareVersion = SoftwareVersion.Trim(),
-                    ExpireDays = ExpireDays,
-                    ExpirePreview = ExpirePreview,
                     MachineCode = MachineCode.Trim().ToUpperInvariant(),
                     LicenseKey = LicenseKey.Trim(),
-                    OutputPath = OutputPath,
-                    IndicatorFiles = ExtraIndicators.Select(x => x.FileName).ToList(),
+                    ExpireDate = expireDate,
+                    RemainingDays = remainingDays,
                 };
                 CustomerHistory.Insert(0, record);
                 SaveCustomerHistory();

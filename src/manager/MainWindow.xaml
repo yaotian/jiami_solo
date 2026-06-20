@@ -79,14 +79,12 @@
                       AutoGenerateColumns="False" CanUserAddRows="False"
                       VerticalScrollBarVisibility="Auto">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="时间" Binding="{Binding Time}" Width="120"/>
-                    <DataGridTextColumn Header="用户名" Binding="{Binding UserName}" Width="100"/>
-                    <DataGridTextColumn Header="联系方式" Binding="{Binding Contact}" Width="120"/>
-                    <DataGridTextColumn Header="软件名称" Binding="{Binding SoftwareName}" Width="110"/>
-                    <DataGridTextColumn Header="版本" Binding="{Binding SoftwareVersion}" Width="50"/>
-                    <DataGridTextColumn Header="授权" Binding="{Binding ExpirePreview}" Width="100"/>
-                    <DataGridTextColumn Header="机器码" Binding="{Binding MachineCode}" Width="160"/>
-                    <DataGridTextColumn Header="输出路径" Binding="{Binding OutputPath}" Width="*"/>
+                    <DataGridTextColumn Header="操作时间" Binding="{Binding Time}" Width="120"/>
+                    <DataGridTextColumn Header="用户名" Binding="{Binding UserName}" Width="90"/>
+                    <DataGridTextColumn Header="机器码" Binding="{Binding MachineCode}" Width="180"/>
+                    <DataGridTextColumn Header="注册码" Binding="{Binding LicenseKey}" Width="260"/>
+                    <DataGridTextColumn Header="授权到期" Binding="{Binding ExpireDate}" Width="100"/>
+                    <DataGridTextColumn Header="剩余天数" Binding="{Binding RemainingDays}" Width="70"/>
                 </DataGrid.Columns>
             </DataGrid>
         </GroupBox>

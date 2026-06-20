@@ -81,7 +81,7 @@ python tools/build_client.py \
 
 ```bash
 msbuild src/manager/WHCryptoManager.csproj /p:Configuration=Release
-# 运行 src/manager/bin/Release/WHCryptoManager.exe
+# 运行 src/manager/bin/Release/指标加密工具管理端.exe
 ```
 
 ## 升级 / 续期

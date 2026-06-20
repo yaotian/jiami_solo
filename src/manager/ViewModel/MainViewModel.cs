@@ -255,6 +255,40 @@ namespace WHCryptoManager.ViewModel
             }
         }
 
+        private static bool IsPasswordProtectedXtrd(string filePath)
+        {
+            try
+            {
+                byte[] data = File.ReadAllBytes(filePath);
+                if (data.Length < 16) return false;
+                string text = Encoding.Default.GetString(data);
+                if (!text.Contains("<HEAD>")) return false;
+                int s = text.IndexOf("<CODE>");
+                int e = text.IndexOf("</CODE>");
+                if (s < 0 || e < 0 || e <= s) return false;
+                string body = text.Substring(s + 6, e - s - 6);
+                int n = 0;
+                foreach (char c in body)
+                {
+                    if (c == '\r' || c == '\n') continue;
+                    if (!Uri.IsHexDigit(c)) return false;
+                    ++n;
+                }
+                return n >= 32;
+            }
+            catch { return false; }
+        }
+
+        private static string SuffixFileNameWithSoftware(string fileName, string softwareName)
+        {
+            if (string.IsNullOrWhiteSpace(softwareName)) return fileName;
+            string suffix = new string(softwareName.Where(c => !Path.GetInvalidFileNameChars().Contains(c)).ToArray());
+            if (string.IsNullOrEmpty(suffix)) return fileName;
+            string ext = Path.GetExtension(fileName);
+            string baseName = Path.GetFileNameWithoutExtension(fileName);
+            return $"{baseName}_{suffix}{ext}";
+        }
+
         private void SaveIndicators(string softwareName = null)
         {
             string path = IndicatorsPath(softwareName ?? SoftwareName);
@@ -312,15 +346,27 @@ namespace WHCryptoManager.ViewModel
                 Multiselect = true,
             };
             if (dlg.ShowDialog() != true) return;
+            var skipped = new List<string>();
             foreach (var path in dlg.FileNames)
             {
                 var name = Path.GetFileName(path);
+                if (!IsPasswordProtectedXtrd(path))
+                {
+                    skipped.Add(name);
+                    continue;
+                }
+                var renamed = SuffixFileNameWithSoftware(name, SoftwareName);
                 ExtraIndicators.Add(new IndicatorItem
                 {
-                    FileName = name,
+                    FileName = renamed,
                     FilePath = path,
                 });
-                Log($"已添加加密指标: {name}");
+                Log($"已添加加密指标: {name} -> {renamed}");
+            }
+            if (skipped.Count > 0)
+            {
+                MessageBox.Show($"以下文件未设置查看密码，已跳过加入：\n{string.Join("\n", skipped)}",
+                                "需要设密码", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
             SaveIndicators();
         }

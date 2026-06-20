@@ -225,6 +225,9 @@ namespace WHCryptoManager.ViewModel
         {
             if (string.IsNullOrWhiteSpace(MachineCode))
             { MessageBox.Show("请输入客户机器码"); return; }
+            string code = MachineCode.Trim().ToUpperInvariant();
+            if (code.Length != 26 || !System.Text.RegularExpressions.Regex.IsMatch(code, "^[A-Z2-7]+$"))
+            { MessageBox.Show("机器码格式不正确，应为 26 位大写字母与数字（2-7）组合"); return; }
             if (string.IsNullOrWhiteSpace(MasterKeyHex) || MasterKeyHex.Length != 64)
                 GenerateMasterKey();
             try

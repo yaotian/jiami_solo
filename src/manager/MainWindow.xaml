@@ -1,8 +1,8 @@
 <Window x:Class="WHCryptoManager.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="文华 WT8 指标加密工具 · 管理端" Height="720" Width="960"
-        WindowStartupLocation="CenterScreen"
+        Title="文华 WT8 指标加密工具 · 管理端" Height="820" Width="960"
+        MinHeight="780" WindowStartupLocation="CenterScreen"
         Closing="Window_Closing">
     <Grid Margin="12">
         <Grid.RowDefinitions>

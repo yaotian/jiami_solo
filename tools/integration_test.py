@@ -18,7 +18,7 @@ BUILD_SCRIPT = ROOT / "tools" / "build_client.py"
 TEST_SRC = ROOT / "build" / "test_indicator.myl"
 TEST_SRC2 = ROOT / "build" / "test_indicator2.myl"
 DIST = ROOT / "dist" / "integration_client.exe"
-MANAGER_EXE = ROOT / "src" / "manager" / "bin" / "Release" / "WHCryptoManager.exe"
+MANAGER_EXE = ROOT / "src" / "manager" / "bin" / "Release" / "指标加密工具管理端.exe"
 
 
 def step(name, ok, detail=""):

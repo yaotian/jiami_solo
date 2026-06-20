@@ -152,13 +152,13 @@ static std::string reg_read_string(const wchar_t* name) {
     HKEY h;
     if (RegOpenKeyExW(HKEY_CURRENT_USER, kRegKey, 0, KEY_READ, &h) != ERROR_SUCCESS)
         return "";
-    char buf[512]{};
+    wchar_t buf[512]{};
     DWORD sz = sizeof(buf);
     DWORD type = 0;
     LSTATUS st = RegQueryValueExW(h, name, nullptr, &type, (LPBYTE)buf, &sz);
     RegCloseKey(h);
     if (st != ERROR_SUCCESS || type != REG_SZ) return "";
-    return std::string(buf);
+    return wstring_to_utf8(buf);
 }
 
 static bool reg_write_string(const wchar_t* name, const std::string& value) {
@@ -1062,6 +1062,13 @@ int launcher::run() {
 
     DWORD t8_pid = find_t8_process();
     if (!t8_pid) {
+        std::wstring saved = get_saved_t8_path();
+        if (!saved.empty() && GetFileAttributesW(saved.c_str()) == INVALID_FILE_ATTRIBUTES) {
+            std::string path_msg = "上次记录的文华8路径已不存在或已被删除：\n" +
+                wstring_to_utf8(saved) +
+                "\n\n请重新选择文华8主程序。";
+            show_msg_utf8("路径变化", path_msg.c_str(), MB_ICONWARNING);
+        }
         t8_pid = launch_t8_process();
         if (!t8_pid) {
             show_msg_utf8("启动失败",

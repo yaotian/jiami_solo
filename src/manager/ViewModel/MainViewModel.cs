@@ -119,6 +119,7 @@ namespace WHCryptoManager.ViewModel
 
         public MainViewModel()
         {
+            _softwareName = LoadLastProject() ?? _softwareName;
             LoadConfig();
             LoadIndicators();
             LoadCustomerHistory();
@@ -136,6 +137,21 @@ namespace WHCryptoManager.ViewModel
         private static string ConfigPath(string softwareName) => Path.Combine(AppDir(), $"{SafeName(softwareName)}_config.json");
         private static string IndicatorsPath(string softwareName) => Path.Combine(AppDir(), $"{SafeName(softwareName)}_indicators.json");
         private static string CustomerHistoryPath(string softwareName) => Path.Combine(AppDir(), $"{SafeName(softwareName)}_customers.json");
+        private static string LastProjectPath() => Path.Combine(AppDir(), "last_project.json");
+
+        private static string LoadLastProject()
+        {
+            string path = LastProjectPath();
+            if (!File.Exists(path)) return null;
+            try { return File.ReadAllText(path, Encoding.UTF8); }
+            catch { return null; }
+        }
+
+        private static void SaveLastProject(string softwareName)
+        {
+            try { File.WriteAllText(LastProjectPath(), softwareName ?? "", Encoding.UTF8); }
+            catch { }
+        }
 
         private void SwitchProject(string oldName, string newName)
         {
@@ -145,6 +161,7 @@ namespace WHCryptoManager.ViewModel
                 SaveIndicators(oldName);
                 SaveCustomerHistory(oldName);
             }
+            SaveLastProject(newName);
             LoadConfig(newName);
             LoadIndicators(newName);
             LoadCustomerHistory(newName);
@@ -386,6 +403,7 @@ namespace WHCryptoManager.ViewModel
             SaveConfig();
             SaveIndicators();
             SaveCustomerHistory();
+            SaveLastProject(SoftwareName);
         }
 
         static string ProjectRoot()

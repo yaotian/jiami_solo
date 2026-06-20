@@ -1,0 +1,17 @@
+build/
+dist/
+_tmp_build/
+data/
+__pycache__/
+*.pyc
+*.obj
+*.pdb
+*.ilk
+*.exp
+*.lib
+bin/
+obj/
+.vs/
+*.user
+*.suo
+src/cpp/launcher/wh_launcher_config.h
